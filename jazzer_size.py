@@ -35,7 +35,7 @@ def jazz(input_audio, input_video, output_video):
       7) Enjoy
     """
     
-    #extract_audio(input_video)
+    extract_audio(input_video)
 
     # fixme: this is dirty variable handling
     video_mp3 = track_data("temp_audio.mp3")
