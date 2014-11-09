@@ -15,13 +15,13 @@ import subprocess
 usage = """
 
 Usage: 
-  python jazzer_size.py <input_audio_file> <input_video_file> <output_video_file>
+  python jazzer_size.py <input_audio_file> <input_video_file> <output_video_file> <multiplier>
 Example: 
-  python jazzer_size.py song.mp3 video.mp4 output.mp4
+  python jazzer_size.py song.mp3 video.mp4 output.mp4 1
 
 """
 
-def jazz(input_audio, input_video, output_video):
+def jazz(input_audio, input_video, output_video, mult=1):
     """
     Main loop. Go big or go home.
     
@@ -45,12 +45,13 @@ def jazz(input_audio, input_video, output_video):
     print("Video BPM: %s" % video_mp3["bpm"]) 
     print("Audio Duration: %s" % audio_mp3["duration"]) 
     print("Audio BPM: %s" % audio_mp3["bpm"]) 
-    
+    print("Multiplier: %s" % mult)
+
     # stretch the video and drop the audio track
     # the output from this will be 'temp_video_stretch.mp4'
     # fixme: use a variable
     # fixme: if the ratio is *too* close, leave it alone
-    chop_video(input_video, video_mp3["bpm"], audio_mp3["bpm"])
+    chop_video(input_video, video_mp3["bpm"], (float(audio_mp3["bpm"])*float(mult)))
 
     stretch_duration = get_video_duration('temp_video_stretch.mp4')
     print("Updated Video Duration: %s" % stretch_duration)
@@ -99,7 +100,9 @@ def chop_video(video_file, video_bpm, audio_bpm):
 
     # This number determines the stretch factor. >1 slows, <1 speeds.
     ratio = audio_bpm / video_bpm
-    
+
+    print("Using Ratio (audio to video) of %s")%ratio
+
     # Use a version of the video that has the audio dropped.
     ff_silence = "ffmpeg -i %s -vcodec copy -an temp_video.mp4" % video_file
     subprocess.call(ff_silence, shell=True)
@@ -151,10 +154,10 @@ if __name__ =='__main__':
         input_audio = sys.argv[1]
         input_video = sys.argv[2]
         output_video = sys.argv[3]
-
+        mult = sys.argv[4]
     except:
         print usage
         sys.exit(-1)
 
     # Clean up the damnable temp files
-    jazz(input_audio, input_video, output_video)
+    jazz(input_audio, input_video, output_video, mult)
