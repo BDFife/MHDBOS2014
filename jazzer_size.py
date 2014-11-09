@@ -7,7 +7,7 @@ ToDo: Modify to hit a specific BPM.
 Heavily adapted from the demo file 'simple_stretch.py' bundled with remix library. 
 
 """ 
-
+import datetime
 import sys
 from echonest.remix import audio
 import subprocess
@@ -50,19 +50,22 @@ def jazz(input_audio, input_video, output_video):
     # the output from this will be 'temp_video_stretch.mp4'
     # fixme: use a variable
     # fixme: if the ratio is *too* close, leave it alone
-    #chop_video(input_video, video_mp3["bpm"], audio_mp3["bpm"])
+    chop_video(input_video, video_mp3["bpm"], audio_mp3["bpm"])
 
     stretch_duration = get_video_duration('temp_video_stretch.mp4')
     print("Updated Video Duration: %s" % stretch_duration)
 
     if (audio_mp3["duration"] > float(stretch_duration)):
-        # fixme: hardcoded
         print("The music is longer than the video")
         loop_video('temp_video_stretch.mp4')
-        #trim_video('temp_video_stretch_full.mp4')
+        # fixme: hardcoded
+        trim_video(audio_mp3["duration"], 'temp_video_stretch_full.mp4')
     else:
         print("The video is longer than the music")
-        #trim_video('temp_video_stretch.mp4')
+        trim_video(audio_mp3["duration"], 'temp_video_stretch.mp4')
+
+    blend_tracks("temp_output_silent.mp4", input_audio, output_video)
+    
 
 
 def extract_audio(video_file):
@@ -122,6 +125,24 @@ def loop_video(video_file):
     ff_loop = "ffmpeg -f concat -i mylist.txt -c copy temp_video_stretch_full.mp4"
     subprocess.call(ff_loop, shell=True)
 
+def trim_video(video_seconds, video_file):
+    """
+    Trim the video to the length of the audio file.
+    """
+
+    # I was having trouble getting the format that ffmpeg wanted (0:00:00.00) so I am using datetime. 
+    video_time = datetime.timedelta(seconds=video_seconds)
+    ff_trim = "ffmpeg -i %s -vcodec copy -acodec copy -ss 00:00:00 -t %s temp_output_silent.mp4" % (video_file, video_time)
+    #print(ff_trim)
+    subprocess.call(ff_trim, shell=True)
+
+def blend_tracks(video_file, audio_file, output_file):
+    """
+    Tie together the original audio and final-candidate video tracks.
+    """
+
+    ff_blend = "ffmpeg -i %s -i %s %s" % (audio_file, video_file, output_file)
+    subprocess.call(ff_blend, shell=True)
 
 
 if __name__ =='__main__': 
@@ -135,4 +156,5 @@ if __name__ =='__main__':
         print usage
         sys.exit(-1)
 
+    # Clean up the damnable temp files
     jazz(input_audio, input_video, output_video)
