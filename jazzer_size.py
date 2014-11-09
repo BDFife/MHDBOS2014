@@ -15,9 +15,9 @@ import subprocess
 usage = """
 
 Usage: 
-  python audio_stretch.py <input_audio_file> <input_video_file> <output_video_file>
+  python jazzer_size.py <input_audio_file> <input_video_file> <output_video_file>
 Example: 
-  python audio_stretch.py song.mp3 video.mp4 output.mp4
+  python jazzer_size.py song.mp3 video.mp4 output.mp4
 
 """
 
