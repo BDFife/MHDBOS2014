@@ -35,7 +35,7 @@ def jazz(input_audio, input_video, output_video):
       7) Enjoy
     """
     
-    extract_audio(input_video)
+    #extract_audio(input_video)
 
     # fixme: this is dirty variable handling
     video_mp3 = track_data("temp_audio.mp3")
@@ -45,8 +45,25 @@ def jazz(input_audio, input_video, output_video):
     print("Video BPM: %s" % video_mp3["bpm"]) 
     print("Audio Duration: %s" % audio_mp3["duration"]) 
     print("Audio BPM: %s" % audio_mp3["bpm"]) 
+    
+    # stretch the video and drop the audio track
+    # the output from this will be 'temp_video_stretch.mp4'
+    # fixme: use a variable
+    # fixme: if the ratio is *too* close, leave it alone
+    #chop_video(input_video, video_mp3["bpm"], audio_mp3["bpm"])
 
-    chop_video(input_video, video_mp3["bpm"], audio_mp3["bpm"])
+    stretch_duration = get_video_duration('temp_video_stretch.mp4')
+    print("Updated Video Duration: %s" % stretch_duration)
+
+    if (audio_mp3["duration"] > float(stretch_duration)):
+        # fixme: hardcoded
+        print("The music is longer than the video")
+        loop_video('temp_video_stretch.mp4')
+        #trim_video('temp_video_stretch_full.mp4')
+    else:
+        print("The video is longer than the music")
+        #trim_video('temp_video_stretch.mp4')
+
 
 def extract_audio(video_file):
     """
@@ -76,21 +93,36 @@ def chop_video(video_file, video_bpm, audio_bpm):
     """
     Develop a BPM ratio and run a ffmpeg command to align
     """
-    
-    pass
 
-#def stretch_audio(input_filename):
-#    """
-#    Get BPM of Audio
-#    """
-#
-#    audiofile = audio.LocalAudioFile(input_filename)
-#    tempo = audiofile.analysis.tempo
-#    # Fixme: replace with a value return.
-#    print(tempo.get("value"))
-#    
-#    #beats = audiofile.analysis.beats
-#    #print(beats)
+    # This number determines the stretch factor. >1 slows, <1 speeds.
+    ratio = audio_bpm / video_bpm
+    
+    # Use a version of the video that has the audio dropped.
+    ff_silence = "ffmpeg -i %s -vcodec copy -an temp_video.mp4" % video_file
+    subprocess.call(ff_silence, shell=True)
+    
+    # Stretch the silenced video.
+    ff_stretch = 'ffmpeg -i temp_video.mp4 -filter:v "setpts=%s*PTS" ./temp_video_stretch.mp4' % ratio
+    subprocess.call(ff_stretch, shell=True)
+
+def get_video_duration(video_file):
+    """
+    Get the duration of the stretched video file
+    """
+
+    ff_duration = "ffprobe -i %s -show_format -v quiet | sed -n 's/duration=//p'" % video_file
+    return subprocess.check_output(ff_duration, shell=True)
+
+def loop_video(video_file):
+    """
+    Loop the video. Hardcoded now as x3 because it's late (for me) and I am tired.
+    """
+    
+    # mylist is not written in this program. hardcoded. 
+    ff_loop = "ffmpeg -f concat -i mylist.txt -c copy temp_video_stretch_full.mp4"
+    subprocess.call(ff_loop, shell=True)
+
+
 
 if __name__ =='__main__': 
     import sys
